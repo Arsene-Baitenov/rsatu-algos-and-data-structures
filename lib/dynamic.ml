@@ -54,6 +54,35 @@ let largest_common_subseq xs ys =
   memo_rec helper (xs, ys)
 ;;
 
+(*******************************Optimal matrix multiplication*******************************)
+
+let optimal_matrix_multiplication ms =
+  let ms = Array.of_list ms in
+  let n = Array.length ms in
+  let helper self (l, r) =
+    if l = r
+    then 0, []
+    else (
+      let h_l = fst ms.(l) in
+      let w_r = snd ms.(r) in
+      let rec loop i (optimal, mult_ord) =
+        if i >= r
+        then optimal, mult_ord
+        else (
+          let w_i = snd ms.(i) in
+          let l_c, l_mo = self (l, i) in
+          let r_c, r_mo = self (i + 1, r) in
+          let c = l_c + r_c + (h_l * w_i * w_r) in
+          let mo = l_mo @ r_mo @ [ i ] in
+          (* let cost = self l i + self (i + 1) r + (h_l * w_i * w_r) in *)
+          let acc = if c < optimal then c, mo else optimal, mult_ord in
+          loop (i + 1) acc)
+      in
+      loop l (max_int, []))
+  in
+  memo_rec helper (0, n - 1)
+;;
+
 (*******************************Tests*******************************)
 
 type ilist = int list [@@deriving show { with_path = false }]
@@ -124,4 +153,29 @@ let%expect_test "Check char 3" =
     [ 'b'; 'a'; 'c'; 'c'; 'b'; 'c'; 'a' ]
   |> print pp_clist;
   [%expect {| ['b'; 'a'; 'b'; 'c'] |}]
+;;
+
+(*******************************Tests Optimal matrix multiplication*******************************)
+
+type ans_helper = int * int list [@@deriving show { with_path = false }]
+
+let%expect_test "Check 1" =
+  optimal_matrix_multiplication [ 10, 30; 30, 5; 5, 60 ] |> print pp_ans_helper;
+  [%expect {| (4500, [0; 1]) |}]
+;;
+
+let%expect_test "Check 2" =
+  optimal_matrix_multiplication [ 1, 5; 5, 20; 20, 1 ] |> print pp_ans_helper;
+  [%expect {| (105, [1; 0]) |}]
+;;
+
+let%expect_test "Check 3" =
+  optimal_matrix_multiplication [ 5, 10; 10, 20; 20, 35 ] |> print pp_ans_helper;
+  [%expect {| (4500, [0; 1]) |}]
+;;
+
+let%expect_test "Check 4" =
+  optimal_matrix_multiplication [ 30, 35; 35, 15; 15, 5; 5, 10; 10, 20; 20, 25 ]
+  |> print pp_ans_helper;
+  [%expect {| (15125, [1; 0; 3; 4; 2]) |}]
 ;;
